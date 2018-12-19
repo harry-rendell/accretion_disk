@@ -8,8 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-#file2 = open('/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/data_small/coords', 'rb')
-#x1,x2,x3 = pickle.load(file2)
+file2 = open('/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/coords', 'rb')
+x1,x2,x3 = pickle.load(file2)
 
 #gives checkerboardpattern
 #q2 = np.zeros((Dr,DTh))
@@ -40,19 +40,19 @@ def vert_quick(r0,m):
     plt.show(C1)
     return q
     
-q = vert_quick(25,0)
+#q = vert_quick(25,0)
 
-#plt.plot(x1)
 
-#Y = np.linspace(0,616,616)
-#X = np.log(x1)
+X = np.linspace(0,616,616)
+Y = np.log(x1)
 
-#m1,c1 = np.polyfit(X[100:400],Y[100:400],1)
-#m2,c2 = np.polyfit(X[500:],Y[500:],1)
+m1,c1 = np.polyfit(X[26:487],Y[26:487],1)
+m2,c2 = np.polyfit(X[500:],Y[500:],1)
 
-##plt.plot(X,m1*X+c1,X,m2*X+c2,X,Y)
+plt.plot(X,m1*X+c1,X,m2*X+c2,X,Y)
 
 #X = np.linspace(0,616,616)
+
 #Y1 = np.exp(X*0.0043354139527592836+1.6897139363007663)
 #Y2 = np.exp(X*0.009126342080710765-0.6496531250140436)
 #plt.plot(X,x1,X,Y1,X,Y2)
