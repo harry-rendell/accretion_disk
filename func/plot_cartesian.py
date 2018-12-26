@@ -80,7 +80,7 @@ def plot(q,n,title,log_or_lin,colormin,colormax,rmin=0,rmax=352,thetamin=0,theta
 #plot(q,0,"Toroidal B",     'lin',-0.02,0.02,300,352)
 #plot(q,0,"Azimuthal B",    'lin',-5e-3,5e-3,300,352)
 #plot(q,0,"", 'lin',np.min(q),np.max(q),0,352,124-70,124+70)
-plot(q,0,"", 'log',1e-5,1e-3,0,400,124-70,124+70)
+#plot(q,0,"", 'log',1e-5,1e-3,0,400,124-70,124+70)
 #plot(q,0,"Velocity", 'lin',0,1,0,352)
 
 
