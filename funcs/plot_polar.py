@@ -1,43 +1,24 @@
- import pyPLUTO as pp
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-import pickle
 
-#hfont = {'fontname':'Latin Modern Roman'}
+def plot_polar(q,n,title,log_or_lin,colormin,colormax,rmin=0,rmax=352,thetamin=0,thetamax=248):
 
-# =============================================================================
-# READING DATA
-# =============================================================================
 
-#file = open('/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/data_small/lum', 'rb')
-#L = pickle.load(file)
+	class MidpointNormalize(colors.Normalize):
+		"""
+		Normalise the colorbar so that diverging bars work there way either side from a prescribed midpoint value)
+		e.g. im=ax1.imshow(array, norm=MidpointNormalize(midpoint=0.,vmin=-100, vmax=100))
+		"""
+		def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+			self.midpoint = midpoint
+			colors.Normalize.__init__(self, vmin, vmax, clip)
 
-#file2 = open('/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/data_small/coords', 'rb')
-#x1,x2,x3 = pickle.load(file2)
+		def __call__(self, value, clip=None):
+			x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+			return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
 
-#wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/data/'
-#D = pp.pload(300,w_dir=wdir)
-#x1 = D.x1; x2 = D.x2; x3 = D.x3
-#q = (D.bx1*D.bx1 + D.bx2*D.bx2 + D.bx3*D.bx3)/2
 
-class MidpointNormalize(colors.Normalize):
-	"""
-	Normalise the colorbar so that diverging bars work there way either side from a prescribed midpoint value)
-	e.g. im=ax1.imshow(array, norm=MidpointNormalize(midpoint=0.,vmin=-100, vmax=100))
-	"""
-	def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-		self.midpoint = midpoint
-		colors.Normalize.__init__(self, vmin, vmax, clip)
-
-	def __call__(self, value, clip=None):
-		x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-		return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
-
-# =============================================================================
-# PLOT FUNCTION
-# =============================================================================
-def plot(q,n,title,log_or_lin,colormin,colormax,rmin=0,rmax=352,thetamin=0,thetamax=248):
     fig,ax = plt.subplots(subplot_kw={'projection': 'polar'})
     
     ax.set_theta_offset(-np.pi/2)
