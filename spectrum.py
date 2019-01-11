@@ -1,7 +1,8 @@
 import numpy as np
 
-def spectrum(q_rp,nu,R_min,R_max):
+def spectrum(q_rp,nu,R_min,R_max,x1,A,B):
     
+    isigma = 60/(np.pi**2)
     
     R_mid = 326;
     
@@ -42,8 +43,7 @@ def spectrum(q_rp,nu,R_min,R_max):
     return B_tot
 
 def single_spectrum(T,nu,R_min=0,R_max=592):
-        factor_nu = (nu**3)
-        factor_dist = (( np.exp(nu/T)-1 ) )**-1
-        B_outer = (factor_nu * factor_dist)
-        return np.log(B_outer)
-
+#        factor_nu = (nu**3)
+#        factor_dist = ( np.exp(nu/T)-1 )**-1
+#        B_outer = (factor_nu * factor_dist)
+        return nu**3*(np.exp(nu/T)-1)**-1

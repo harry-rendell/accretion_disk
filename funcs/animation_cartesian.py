@@ -2,14 +2,12 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
-def animation_cartesian(x,y,x_min,x_max,save_as,n_frames,n_fps,pt,y_lims=None):
+def animation_cartesian(fig,ax,x,y,x_min,x_max,save_as,n_frames,n_fps,pt,y_lims=None):
     
     x = x[x_min:x_max]
     y = y[x_min:x_max,:]
     
     ymax = np.max(y); ymin = np.min(y)
-    
-    fig,ax = plt.subplots(1, 1, figsize=(6,4))
     
     def animate(i): 
         ax.clear()

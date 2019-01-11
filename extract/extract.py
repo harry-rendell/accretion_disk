@@ -16,6 +16,7 @@ import os
 #ZMaxwell = ZBr*ZBPh
 #ZBtot = ZBr + ZBTh + ZBPh
 #Zprstot = Zprs + 0.5*ZBtot**2
+#wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/'
 
 r_min = 24; r_max = 616;
 t_min = 39; t_max = 209;
