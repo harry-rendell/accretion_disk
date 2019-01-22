@@ -17,7 +17,7 @@ import os
 #ZBtot = ZBr + ZBTh + ZBPh
 #Zprstot = Zprs + 0.5*ZBtot**2
 
-r_min = 24; r_max = 616;
+r_min = 0; r_max = 616;
 t_min = 39; t_max = 209;
 
 filename = 'maxwell_stress_rp'

@@ -16,7 +16,7 @@ from spectrum import spectrum, single_spectrum
 # =============================================================================
 # LOAD
 # =============================================================================
-start = 669; end = start + 9;
+start = 669; end = start + 100;
 q_rp = load_quantity('maxwell_stress_rp',start,end) #start-end inclusive
 wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/'
 x1,x2,x3,A,B = load_coords(wdir)
@@ -26,7 +26,6 @@ x1,x2,x3,A,B = load_coords(wdir)
 # =============================================================================
 animation_cartesian(x1,q_rp[:,0,:],0,592,'TEST2',frames=11,n_fps=5,pt=0.3,y_lims=[-0.01,0])
 #animation_polar(x1,x3,q_rp,0,328,0,128,'TEST3',10,'lin',v_min=-0.015,v_max=0.0005)
-plot_cartesian(x1,np.mean(bx1s[24:,:,:],axis=(1,2)), (0,), 0, 592, 0.3, 'lin')
 plot_cartesian(x1,np.mean(bx1[24:,:,:],axis=(1,2)), (0,), 0, 592, 0.3, 'lin')
 # =============================================================================
 # PLOT TEMP
