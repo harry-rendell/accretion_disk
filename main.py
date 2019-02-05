@@ -8,10 +8,11 @@ from funcs.load_quantity import load_quantity
 from funcs.load_quantity_reduced import load_quantity_reduced
 from funcs.plot_cartesian import plot_cartesian
 from funcs.animation_generic import animation_generic
-from spectrum import spectrum, single_spectrum
+from spectrum import spectrum
 from funcs.animation_polar import animation_polar
 
 wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/'
+
 
 ''' use *args to pass self.x1 etc'''
 class main():
@@ -32,11 +33,11 @@ class main():
         
         self.start = start
         self.end = end
-        self.t = np.linspace(start,end,end-start+1)*30.7812e-4
-        
+        self.t = np.linspace(0,end-start,end-start+1)*30.7812e-4
+
         self.dF = abs((self.q_rp/170.0) * (1.5 * self.C * self.x1 ** (-0.5))[:,np.newaxis,np.newaxis]) #Local flux
         self.dT = (60.0/(np.pi**2) * abs(self.dF)**0.25)                                               #Local temperature           
-    
+   
     def doppler(self,i):
         
         r = self.x1
@@ -48,14 +49,14 @@ class main():
         self.z = a*(1+b)
                
         
-    def BB_spectrum(self,nu):
-        self.spectrum = spectrum(self,nu,0,328).sum((1,2)).transpose(1,0)
+    def BB_spectrum(self,nu,R_min,R_max=462):
+        self.spec = spectrum(self,nu,R_min,R_max).sum((1,2)).transpose(1,0)
 
     def multi_animation(self):
         animation_generic(self.x1, self.x3, abs(self.q_rp), self.x1, abs(self.q_rp).sum(1), n_frames = 98, n_fps = 7, save_as = 'generic_test_100_450')
         
     def ani_polar(self):
-        animation_polar(self.x1,self.x3,abs(self.q_rp),0,328,0,128,'TEST3',10,'log',v_min=1e-5,v_max=8e-3)
+        animation_polar(self.x1,self.x3,abs(self.q_rp),0,462,0,128,'TEST3',10,'log',v_min=1e-5,v_max=8e-3)
         
     def spectrogram_(self):
         x = abs(self.q_rp).sum((1,2))
@@ -65,14 +66,14 @@ class main():
     
     def cartesian_nu(self,nu):
         fig,ax = plt.subplots(1, 1, figsize=(6,4))  
-        y = spectrum(self,nu,0,328).sum((1,2))
+        y = spectrum(self,nu,0,462).sum((1,2))
         plot_cartesian(fig,ax,nu,y, range(self.q_rp.shape[-1]), 0, 592, 0.3, 'log',r'Luminosity variation for a given frequency, $6r_g-25r_g$',r'Freq, $c^3/GM$',r'$L$',self.t)
         
 #        plot_cartesian(fig,ax,x,y,plot_list,x_min,x_max,pt,log_or_lin,title='',x_label='',y_label='',labels=np.empty(0),fit=None):
 
     def cartesian_t(self,nu,norm='norm'):
         fig,ax = plt.subplots(1, 1, figsize=(6,4))  
-        y = spectrum(self,nu,0,328).sum((1,2)).transpose(1,0)
+        y = spectrum(self,nu,0,462).sum((1,2)).transpose(1,0)
         
         ax.set_title(r'Luminosity variation for a given frequency $6r_g-25r_g$')
         ax.set_xlabel(r'Time, $GM/c^3$')
@@ -122,6 +123,12 @@ class main():
 #%%
 data = main()
 data.load('maxwell_stress_rp',239,1262,reduced='no')
+N = 10
+#nu = np.logspace(-3,0,N)
+nu = np.linspace(0.01,0.5,N)
+data.BB_spectrum(nu,0,462)
+
+y = data.spec
 #665,685
 #1262
 #nu = np.logspace(10**(-0.45),10**(0.04),5) #above max
@@ -203,7 +210,7 @@ data.temperature(skip=10)
 
 #data.spectrogram()
 
-x = spectrum(data,np.array([0.35]),0,328)
+x = spectrum(data,np.array([0.35]),0,462)
 x = x.sum(2)[0,:,:]
 
 
@@ -230,15 +237,15 @@ shifted = data.L_shift
 
 #nu = np.logspace(np.log10(0.1),np.log10(2),5)
 
-
+nu = np.array([0.12,0.34])
 def coherence(self,nu):
 #    N=11
     
 #    nu = np.linspace(10**(-0.45),10**(0.04),N) #above max
 #    nu = np.linspace(10**(-0.45),10**(-0.2),N) #above max
-    y = self.spectrum
+    y = self.spec
     N = len(nu)
-    peak = 2
+    peak = 1
     for i in range(N):
 #        y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.mean(y[:,i])
         y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
@@ -326,14 +333,14 @@ def half_radius(self,nu,R_max):
     
     dB = (nu**3)[:,np.newaxis,np.newaxis,np.newaxis] * (np.exp( np.divide.outer(nu,self.dT[:R_max]))-1) ** -1
     
-    if R_max <= 328:
+    if R_max <= 462:
         
         B = a1 * (self.x1[np.newaxis,:R_max,np.newaxis,np.newaxis]**2 * dB).sum(2)
     
-    elif R_max > 328:
+    elif R_max > 462:
         
-        B_inner = a1 * (self.x1[np.newaxis,:328     ,np.newaxis,np.newaxis]**2 * dB[:,:328,:,:]).sum(2)
-        B_outer = a2 * (self.x1[np.newaxis,328:R_max,np.newaxis,np.newaxis]**2 * dB[:,328:R_max,:,:]).sum(2)
+        B_inner = a1 * (self.x1[np.newaxis,:462     ,np.newaxis,np.newaxis]**2 * dB[:,:462,:,:]).sum(2)
+        B_outer = a2 * (self.x1[np.newaxis,462:R_max,np.newaxis,np.newaxis]**2 * dB[:,462:R_max,:,:]).sum(2)
         B = np.concatenate((B_inner,B_outer),axis=1)
     
     B_cumsum = np.cumsum(B,axis = 1)
@@ -349,7 +356,7 @@ def half_radius(self,nu,R_max):
 nu = np.linspace(0.03,0.3,30)
 
 N = len(nu)
-r_max = 328
+r_max = 462
 
 
 def plot_half_radius(B_d,B_f,lum):
@@ -418,26 +425,38 @@ x3 = D.x3
 
 #%%
 ''' TIME LAGS '''
-y = data.spectrum
-#for i in range(11):
+
+
+
+#for i in range(N):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
 
-sig1 = np.fft.fft(y[:,0])
-sig2 = np.fft.fft(y[:,1])
-sig3 = np.fft.fft(y[:,2])
+fig1,ax1 = plt.subplots(1,1)
+fig2,ax2 = plt.subplots(3,3)
+ax1.plot(data.t,y[:,0],lw=0.5,label = r'$\nu = $%.2f'%nu[0])
+def time_lags(y):
+    
+    for i in range(N):
+        
+        j = (i / 3,i % 3)
+        
+        sig1 = np.fft.fft(y[:,6],n=256)
+        sig2 = np.fft.fft(y[:,i],n=256)
+        
+        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%nu[i])
+        ax1.legend(loc=1)
+    #freqs = np.fft.rfftfreq(len(sig1))  
+        freqs = np.linspace(1,len(sig1)+1,len(sig1))
+        time_lag = np.angle(sig1*np.conj(sig2))
 
-plt.plot(y[:,0])
-plt.plot(y[:,1])
-plt.plot(y[:,2])
-plt.figure()
-#freqs = np.fft.rfftfreq(len(sig1))  
-freqs = range(1,len(sig1)+1)
+        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$\nu = $%.2f'%nu[i])
+        l,m=np.polyfit(freqs,time_lag,1)
+        ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
+        ax2[j].legend(loc=1)
 
-time_lag = np.angle(sig1*np.conj(sig2))/freqs
-time_lag2 = np.angle(sig1*np.conj(sig3))/freqs
+time_lags(y)
+    
 
-plt.plot(freqs,time_lag,marker='o',lw=0.3)
-plt.plot(freqs,time_lag2,marker='+',lw=0.3)
 
 #%%
 ''' TESTING MODELS '''
