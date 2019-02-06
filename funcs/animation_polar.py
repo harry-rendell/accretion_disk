@@ -8,17 +8,17 @@ import matplotlib.animation as animation
 def animation_polar(x,y,z,save_as,n_frames,log_or_lin,v_min,v_max):
     
     class MidpointNormalize(colors.Normalize):
-	"""
-	Normalise the colorbar so that diverging bars work there way either side from a prescribed midpoint value)
-	e.g. im=ax1.imshow(array, norm=MidpointNormalize(midpoint=0.,vmin=-100, vmax=100))
-	"""
-	def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-		self.midpoint = midpoint
-		colors.Normalize.__init__(self, vmin, vmax, clip)
+		"""
+		Normalise the colorbar so that diverging bars work there way either side from a prescribed midpoint value)
+		e.g. im=ax1.imshow(array, norm=MidpointNormalize(midpoint=0.,vmin=-100, vmax=100))
+		"""
+		def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+			self.midpoint = midpoint
+			colors.Normalize.__init__(self, vmin, vmax, clip)
 
-	def __call__(self, value, clip=None):
-		x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-		return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
+		def __call__(self, value, clip=None):
+			x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+			return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
     
 #    x = x[x_min:x_max]
 #    y = y[y_min:y_max]
