@@ -44,7 +44,7 @@ class main():
         theta = (self.x3+np.pi) # *6 propagates the disc around 2pi, makes the orbital modulation frequency much cleaner! However, velocities now *6
         
         a = ( (r / (r-3)) ** 0.5 )[:,np.newaxis]
-        b = np.outer( (r-2)**(-0.5) , np.cos(theta)*np.sin(i) )
+        b = np.outer( (r-2)**(-0.5) , np.cos(theta)*np.cos(i) )
         
         self.z = a*(1+b)
                
@@ -122,18 +122,31 @@ class main():
 
 #%%
 data = main()
-data.load('maxwell_stress_rp',239,1262,reduced='no')
+data.load('maxwell_stress_rp',300,301,reduced='no')
 N = 10
 #nu = np.logspace(-3,0,N)
 nu = np.linspace(0.01,0.5,N)
-data.BB_spectrum(nu,0,462)
 
-y = data.spec
+#%%
+''' spectra from different annuli '''
+nu = np.array([0.5])
+
+spacing = 30
+start = 150
+radii = range(start,start+9*spacing,spacing)
+data.BB_spectrum(nu,start,start+spacing)
+y0 = data.spec
+for i in range(1,9):
+    
+    data.BB_spectrum(nu,start+i*spacing,start+(i+1)*spacing)
+    y0 = np.concatenate((y0,data.spec),axis=1)
+#data.BB_spectrum(nu,100+i*40,140*i*40)
+#data.spec
+
 #665,685
 #1262
 #nu = np.logspace(10**(-0.45),10**(0.04),5) #above max
-nu = np.linspace(0.01,1,5)
-data.BB_spectrum(nu)
+
 #%%
 '''PLOT BB'''
 #nu = np.linspace(10**(-0.45),10**(0.04),10) #above max
@@ -237,13 +250,14 @@ shifted = data.L_shift
 
 #nu = np.logspace(np.log10(0.1),np.log10(2),5)
 
-nu = np.array([0.12,0.34])
+#nu = np.array([0.12,0.34])
 def coherence(self,nu):
 #    N=11
     
 #    nu = np.linspace(10**(-0.45),10**(0.04),N) #above max
 #    nu = np.linspace(10**(-0.45),10**(-0.2),N) #above max
-    y = self.spec
+#    y = self.spec
+    y=y0
     N = len(nu)
     peak = 1
     for i in range(N):
@@ -294,7 +308,56 @@ def coherence(self,nu):
     plot_cartesian(fig2,ax2,self.t,y[:,(peak+1):], range(N-peak-1), 0.3, 'lin',labels = nu[peak:],fit = None)
 
     
-coherence(data,nu)
+coherence(data,range(9))
+
+#%%
+''' correlation across radii '''
+
+fig,ax = plt.subplots(3,3)
+
+fig.suptitle(r'Cross correlation between non overlapping annuli, $\nu = 0.5$')
+fig.tight_layout()
+fig.subplots_adjust(top=0.88)
+
+for i in range(9):
+
+    j = (i / 3,i % 3)
+    
+    times = data.t
+    full_times = np.linspace(-times[-1],times[-1],2*len(times)-1)
+    result = signal.correlate(y0[:,4],y0[:,i])
+    ax[j].plot(full_times,result,lw = 0.6,color = 'b',label = r'%i$r_g$'%data.x1[radii[i]])
+    ax[j].legend(loc=1)
+    ax[j].plot(full_times[np.argmax(result)],np.max(result),'.',color='r')
+    ax[j].set_xlabel(r'Time lag, $(GM/c^3 \times 10^4)$'); ax[j].set_ylabel(r'Cross Correlation');
+
+
+    print full_times[np.argmax(result)],np.max(result)
+
+#def time_lags(y):
+#    
+#    for i in range(9):
+#        
+#        j = (i / 3,i % 3)
+#        
+#        sig1 = np.fft.fft(y[:,0],n=256)
+#        sig2 = np.fft.fft(y[:,i],n=256)
+#        
+#        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%i)
+#        ax1.legend(loc=1)
+#    #freqs = np.fft.rfftfreq(len(sig1))  
+#        freqs = np.linspace(1,len(sig1)+1,len(sig1))
+#        time_lag = np.angle(sig1*np.conj(sig2))
+#
+#        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$\nu = $%.2f'%i)
+#        l,m=np.polyfit(freqs,time_lag,1)
+#        ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
+#        ax2[j].legend(loc=1)
+#
+#time_lags(y0)
+
+
+
 
 #%% 
 ''' PSD '''
@@ -352,8 +415,8 @@ def half_radius(self,nu,R_max):
     
     return np.mean(Norm_disc,axis=2), np.mean(Norm_freq,axis=2),L,B
 
-#nu = np.logspace(np.log10(0.03),np.log10(0.2),30)
-nu = np.linspace(0.03,0.3,30)
+nu = np.logspace(np.log10(0.03),np.log10(3),20)
+#nu = np.linspace(0.03,2,5)
 
 N = len(nu)
 r_max = 462
@@ -395,7 +458,11 @@ def plot_half_radius(B_d,B_f,lum):
     ax2.set_ylabel(r'$B_{\nu}(<r)$')
     
     plot_cartesian(fig2,ax2,data.x1[:r_max],B_d.transpose(1,0),range(len(nu)),0.3,'lin',labels = nu)
-    plt.savefig("splitting_long.pdf",dpi = 300,bbox_inches="tight")
+    
+    ax1.legend()
+    ax2.legend()
+    
+#    plt.savefig("splitting_long.pdf",dpi = 300,bbox_inches="tight")
 
 B_disc,B_freq,L,B = half_radius(data,nu,r_max)
 plot_half_radius(B_disc,B_freq,L)
@@ -431,37 +498,42 @@ x3 = D.x3
 #for i in range(N):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
 
-fig1,ax1 = plt.subplots(1,1)
-fig2,ax2 = plt.subplots(3,3)
-ax1.plot(data.t,y[:,0],lw=0.5,label = r'$\nu = $%.2f'%nu[0])
+
 def time_lags(y):
     
-    for i in range(N):
+    for i in range(9):
         
         j = (i / 3,i % 3)
         
-        sig1 = np.fft.fft(y[:,6],n=256)
-        sig2 = np.fft.fft(y[:,i],n=256)
+        sig1 = np.fft.fft(y[:,4],n=512)
+        sig2 = np.fft.fft(y[:,i],n=512)
         
-        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%nu[i])
+        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%i)
         ax1.legend(loc=1)
     #freqs = np.fft.rfftfreq(len(sig1))  
         freqs = np.linspace(1,len(sig1)+1,len(sig1))
         time_lag = np.angle(sig1*np.conj(sig2))
 
-        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$\nu = $%.2f'%nu[i])
+        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$radius = $%i$r_g$'%data.x1[radii[i]])
         l,m=np.polyfit(freqs,time_lag,1)
         ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
         ax2[j].legend(loc=1)
+        ax2[j].set_xlabel('Temporal frequency'); ax2[j].set_ylabel(r'Phase shift, $\Delta \phi$');
 
-time_lags(y)
+fig1,ax1 = plt.subplots(1,1)
+fig2,ax2 = plt.subplots(3,3)
+fig2.suptitle(r'Time lags between non overlapping annuli, $\nu = 0.5$')
+fig2.tight_layout()
+fig.subplots_adjust(top=0.88)
+ax1.plot(data.t,y0[:,0],lw=0.5,label = r'$\nu = $%.2f'%0)
+time_lags(y0)
     
 
 
 #%%
 ''' TESTING MODELS '''
 
-fig,ax = plt.subplots(1,1,figsize=(6,4))
+fig,ax = plt.subplots(1,1,figsize=(9,6))
 
 def model1(r,A,B,C):
     return A * r**(-B) * (1- (C / r) ** 0.5)**0.25
@@ -479,10 +551,13 @@ l,m=np.polyfit(np.log(xdata),np.mean(np.log(ydata),axis=tuple(range(1, ydata.ndi
 popt1,pcov1 = scipy.optimize.curve_fit(model1,xdata,ydata,p0=[1,0.75,6])
 popt2,pcov2 = scipy.optimize.curve_fit(model2,xdata,ydata,p0=[1,0.75])
 
-ax.plot(xdata,model1(xdata,popt1[0],popt1[1],popt1[2]),label='model_full',lw = 0.5)
-ax.plot(xdata,model2(xdata,popt2[0],popt2[1]),label='model_power', lw = 0.5)
-ax.plot(xdata,ydata,label='data',lw = 0.5)
+ax.plot(xdata,model1(xdata,popt1[0],popt1[1],popt1[2]),label=r'$T(r) = 1.9 \times r^{-0.64}(1-\sqrt{4.42/r})^{0.75}$',lw = 0.7)
+ax.plot(xdata,model2(xdata,popt2[0],popt2[1]),label=r'$T(r) = 0.96 \times r^{-0.48}$', lw = 0.7)
+ax.plot(xdata,ydata,label='data',lw = 0.7)
 ax.legend()
+
+print popt1
+print popt2
 
 ax.set_xlabel(r'Radius $r / r_g$')
 ax.set_ylabel(r'Temperature')
@@ -491,16 +566,25 @@ ax.set_title(r'Testing models')
 
 #%%
 ''' EFFECT OF REDSHIFT TO T(R)'''
-data.doppler(np.pi/2)
-shifted = np.mean(data.dT / data.z[:,:,np.newaxis],axis=1)[:,0]
-unshifted = np.mean(data.dT,axis=1)[:,0]
+fig,ax = plt.subplots(2,2,figsize=(9,6))
+incs = np.array([0,np.pi/6,np.pi/3,np.pi/2])
+degs = np.array([0,30,60,90])
+for i in range(4):
+    
+    j = (i / 2,i % 2)
+    
+    data.doppler(incs[i])
+    shifted = np.mean(data.dT / data.z[:,:,np.newaxis],axis=1)[:,0]
+    unshifted = np.mean(data.dT,axis=1)[:,0]
+    ax[j].set_title(r'$i = $%i$^\circ$'%degs[i])
+    ax[j].plot(data.x1,shifted,label='shifted',lw=0.7)
+    ax[j].plot(data.x1,unshifted,label='unshifted',lw=0.7)
+    ax[j].set_xlabel(r'Radius, $r_g$'); ax[j].set_ylabel(r'Temperature');
+    ax[j].legend()
 
-fig,ax = plt.subplots(1,1,figsize=(6,4))
-
-ax.plot(shifted,label='shifted',lw=0.7)
-ax.plot(unshifted,label='unshifted',lw=0.7)
-
-ax.legend()
+fig.suptitle(r'Effect of redshift on temperature')
+fig.tight_layout()
+fig.subplots_adjust(top=0.88)
 
 #%%
 ''' EFFECT OF REDSHIFT TO L(t) '''

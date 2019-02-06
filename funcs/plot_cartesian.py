@@ -15,7 +15,7 @@ def plot_cartesian(fig,ax,x,y,plot_list,pt,log_or_lin,labels=np.empty(0),fit=Non
         
     
     for i in plot_list:
-        ax.plot(x,y[...,i],linewidth=pt,label = r'$\nu = $%.2f'%labels[i],color=plt.cm.jet_r(60*i))
+        ax.plot(x,y[...,i],linewidth=pt,label = r'$\nu = $%.2f'%labels[i],color=plt.cm.jet_r(40*i))
     
 #    if np.array_equal(labels,np.empty(0)) != True :
 #    ax.legend(loc='lower right')
