@@ -19,40 +19,21 @@ wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/'
 ''' use *args to pass self.x1 etc'''
 class main():
     
-
-    def load(self,name,start,end,reduced='yes'):
-        
-#        fileObject = open(wdir + 'coords')
-#        coords = pickle.load(fileObject)
-#        fileObject.close()
-#        self.x1, self.x2, self.x3, self.C = coords
-        
-        if reduced == 'no':
-            self.q_rp = load_quantity(name,start,end)
-        elif reduced == 'yes':
-            self.q_rp = load_quantity_reduced(self,name,start,end)
-
-        self.start = start
-        self.end = end
-        self.t = np.linspace(0,end-start,end-start+1)*30.7812
-
-#        self.dF = abs((self.q_rp/170.0) * (1.5 * self.C * self.x1 ** (-0.5))[:,np.newaxis,np.newaxis]) #Local flux
-#        self.dT = (60.0/(np.pi**2) * abs(self.dF)**0.25) #Local temperature
-
-    def csv_load(self,name,start,end):
+    def __init__(self,start,end):
         fileObject = open(wdir + 'coords_24_486')
         coords = pickle.load(fileObject)
         fileObject.close()
         self.x1, self.x2, self.x3, self.C = coords
         
-        self.q_rp = np.zeros((462,128,end-start+1))
-        for i in range(end-start+1):
-            self.q_rp[:,:,i] = pd.read_csv(wdir + name + '/' + name +'_0%i' %(i+start),header=None).values
-            
         self.start = start
         self.end = end
-        self.t = np.linspace(0,end-start,end-start+1)*30.7812
-   
+        self.t = np.linspace(0,end-start,end-start+1)*30.7812    
+        
+    def csv_load(self,name):
+        self.q_rp = np.zeros((462,128,self.end-self.start+1))
+        for i in range(self.end-self.start+1):
+            self.q_rp[:,:,i] = pd.read_csv(wdir + name + '/' + name +'_0%i' %(i+start),header=None).values
+
     def doppler(self,i):
         r = self.x1
         theta = (self.x3+np.pi) # *6 propagates the disc around 2pi, makes the orbital modulation frequency much cleaner! However, velocities now *6
@@ -63,76 +44,26 @@ class main():
     def BB_spectrum(self,nu,R_min=0,R_max=462):
         self.spec = spectrum(self,nu,R_min,R_max).sum((1,2)).transpose(1,0)
 
-    def multi_animation(self):
-        animation_generic(self.x1, self.x3, abs(self.q_rp), self.x1, abs(self.q_rp).sum(1), n_frames = 98, n_fps = 7, save_as = 'generic_test_100_450')
-        
-    def ani_polar(self):
-        animation_polar(self.x1,self.x3,abs(self.q_rp),0,462,0,128,'TEST3',10,'log',v_min=1e-5,v_max=8e-3)
-        
     def spectrogram_(self):
         x = abs(self.q_rp).sum((1,2))
         fig,ax = plt.subplots(1, 1, figsize=(6,4))
         freqs, times, sig = signal.spectrogram(x)
         ax.pcolormesh(freqs,times,sig)
     
-    def cartesian_nu(self,nu):
-        fig,ax = plt.subplots(1, 1, figsize=(6,4))  
-        y = spectrum(self,nu,0,462).sum((1,2))
-        plot_cartesian(fig,ax,nu,y, range(self.q_rp.shape[-1]), 0, 592, 0.3, 'log',r'Luminosity variation for a given frequency, $6r_g-25r_g$',r'Freq, $c^3/GM$',r'$L$',self.t)        
-#        plot_cartesian(fig,ax,x,y,plot_list,x_min,x_max,pt,log_or_lin,title='',x_label='',y_label='',labels=np.empty(0),fit=None):
-        
-    def cartesian_t(self,nu,norm='norm'):
-        fig,ax = plt.subplots(1, 1, figsize=(6,4))  
-        y = spectrum(self,nu,0,462).sum((1,2)).transpose(1,0)
-        
-        ax.set_title(r'Luminosity variation for a given frequency $6r_g-25r_g$')
-        ax.set_xlabel(r'Time, $GM/c^3$')
-        ax.set_ylabel(r'$L$')
-        
-        plot_cartesian(fig,ax,self.t,y, range(self.q_rp.shape[-1]), 0, 592, 0.3, 'lin',nu)
-
-    def temperature(self,skip):
-        fig,ax = plt.subplots(1, 1, figsize=(6,4))  
-        fig2,ax2 = plt.subplots(1, 1, figsize=(6,4))  
-        
-        ax.set_title(r'Temperature variation')
-        ax.set_xlabel(r'log$(r_g)$')
-        ax.set_ylabel(r'log(T)')
-        
-        ax2.set_title(r'Peak frequency of emission')
-        ax2.set_xlabel(r'$(r_g)$')
-        ax2.set_ylabel(r'Freq, $c^3/GM \times 10^{12}$')        
-#        plot_cartesian(fig,ax,self.t,y, range(self.q_rp.shape[-1]), 0, 592, 0.3, 'lin',r'Luminosity variation for a given frequency, $6r_g-25r_g$',r'Time, $GM/c^3$',r'$L$',nu)
-        plot_cartesian(fig,ax,self.x1,self.dT[:,:,::skip].sum(1),range(self.dT.shape[-1]/skip),0.3,'log',self.t[::skip],'fit')
-        plot_cartesian(fig2,ax2,self.x1,self.dT[:,:,::skip].sum(1)*(3.0/2.9),range(self.dT.shape[-1]/skip),0.3,'lin',self.t[::skip],'fit')
-#        Labels are wrong, should be t not nu
-        
     def luminosity(self,R_min=0,R_max=592):
-    #        load_quantity_reduced
         a1 = 0.004335413952759297 #dimensionless
-    #        a2 = 0.009126342080710765 #dimensionless
         
         L_shift_ = (abs( (self.q_rp * (self.z[:,:,np.newaxis]**-4)) .sum(1))[R_min:R_max] * (a1 * self.x1 ** 1.5 * self.C)[R_min:R_max,np.newaxis]).sum(0)
         L_       = (abs(  self.q_rp.sum(1))                            [R_min:R_max] * (a1 * self.x1 ** 1.5 * self.C)[R_min:R_max,np.newaxis]).sum(0)
       
-#        self.L = L_
-#        self.L_shift = L_shift_
-       
         self.L = (L_-np.mean(L_))/np.mean(L_)
         self.L_shift = (L_shift_-np.mean(L_shift_))/np.mean(L_shift_)
         
-
-    
+#        ax1.plot(data.t,y0[:,0],lw=0.5,label = r'$\nu = $%.2f'%0)
 
 #%%
-data = main()
-#data.load('maxwell_stress_rp',239,338,reduced='no')
-
-data.csv_load('csv_ms',239,1262)
-
-N = 10
-#nu = np.logspace(-3,0,N)
-nu = np.linspace(0.01,0.5,N)
+data = main(239,1262)
+data.csv_load('csv_ms')
 
 #%%
 ''' spectra from different annuli '''
@@ -156,15 +87,13 @@ for i in range(1,9):
 
 #%%
 '''PLOT BB'''
-#nu = np.linspace(10**(-0.45),10**(0.04),10) #above max
-
 N = 9
-#nu = np.logspace(-2,0,N)
 nu = np.linspace(0.05,1.1,N)
 y = abs(spectrum(data,nu,0,326).sum((1,2)).transpose(1,0))
 
 #for i in range(N):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.mean(y[:,i])
+
 fig,ax = plt.subplots(1, 1, figsize=(6,4))
 
 '''subtract the downward trend, assuming it is linear'''
@@ -213,9 +142,6 @@ for i in range(N):
 plt.subplots_adjust(hspace=0.3)
 #    ax2[i / 3,i % 3].set_title(r'$\nu = $%.2f'%nu[i])
     
-
-
-
 #%%
 '''same as plotBB'''
 data.cartesian_t(nu)
@@ -226,13 +152,9 @@ data.temperature(skip=10)
 
 #%%
 '''spectrogram'''
-
 #data.spectrogram()
-
 x = spectrum(data,np.array([0.35]),0,462)
 x = x.sum(2)[0,:,:]
-
-
 #x = np.mean(abs(data.q_rp),axis=(1,2))
 fig,ax = plt.subplots(1, 1, figsize=(6,4))
 freqs, times, signals = signal.spectrogram(x,nperseg=32)
@@ -244,22 +166,14 @@ ax.pcolormesh(T,F,signals)
 fig,ax = plt.subplots(1, 1, figsize=(6,4))
 data.doppler(0)
 data.luminosity(0,17)
-
 unshifted = data.L
 shifted = data.L_shift
-
-
-
 #%%
 '''coherence'''
-#
-
 #nu = np.logspace(np.log10(0.1),np.log10(2),5)
-
 #nu = np.array([0.12,0.34])
 def coherence(self,nu):
 #    N=11
-    
 #    nu = np.linspace(10**(-0.45),10**(0.04),N) #above max
 #    nu = np.linspace(10**(-0.45),10**(-0.2),N) #above max
 #    y = self.spec
@@ -269,7 +183,6 @@ def coherence(self,nu):
     for i in range(N):
 #        y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.mean(y[:,i])
         y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
-        
     fig1,ax1 = plt.subplots(1, 1, figsize=(6,4))
     fig3,ax3 = plt.subplots(1, 1, figsize=(6,4))
     
@@ -301,13 +214,10 @@ def coherence(self,nu):
     ax1.set_xlabel(r'Time lag $(GM/c^3)\times 10^4$'); ax1.set_ylabel('Cross correlation')
     ax3.set_xlabel('Temporal frequency'); ax3.set_ylabel('Coherence')
     
-    
     fig2,ax2 = plt.subplots(1, 1, figsize=(6,4))
     ax2.set_title(r'Spectral radiance above $\nu_{max}$')
     ax2.set_xlabel(r'$Time$ $(GM/c^3)\times 10^4$')
     ax2.set_ylabel(r'$B_{\nu}-\bar{B}_{\nu}$')
-
-
 
     plot_cartesian(fig2,ax2,self.t,y[:,:peak], range(peak), 0.3, 'lin',labels = nu[:peak],fit = None)
     plot_cartesian(fig2,ax2,self.t,y[:,peak]  , (0,)      , 0.5, 'lin',labels = [nu[peak]],fit = None)
@@ -339,40 +249,15 @@ for i in range(9):
 
 
     print full_times[np.argmax(result)],np.max(result)
-
-#def time_lags(y):
-#    
-#    for i in range(9):
-#        
-#        j = (i / 3,i % 3)
-#        
-#        sig1 = np.fft.fft(y[:,0],n=256)
-#        sig2 = np.fft.fft(y[:,i],n=256)
-#        
-#        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%i)
-#        ax1.legend(loc=1)
-#    #freqs = np.fft.rfftfreq(len(sig1))  
-#        freqs = np.linspace(1,len(sig1)+1,len(sig1))
-#        time_lag = np.angle(sig1*np.conj(sig2))
-#
-#        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$\nu = $%.2f'%i)
-#        l,m=np.polyfit(freqs,time_lag,1)
-#        ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
-#        ax2[j].legend(loc=1)
-#
-#time_lags(y0)
-
-
-
-
+    
 #%% 
 ''' PSDs '''
 #nu = np.logspace(np.log10(0.01),np.log10(2),10)
 nu = np.concatenate((np.logspace(np.log10(0.005),np.log10(0.5),7),np.linspace(0.6,2,8)))
 data.BB_spectrum(nu)
 y = data.spec
-for i in range(5):
-    np.savetxt('%.3f.txt'%nu[i],np.concatenate((t[:,np.newaxis],y[:,i][:,np.newaxis]),axis=1),delimiter = ',')
+#for i in range(5):
+#    np.savetxt('%.3f.txt'%nu[i],np.concatenate((t[:,np.newaxis],y[:,i][:,np.newaxis]),axis=1),delimiter = ',')
 def psd(ax1,ax2,y):
     N = len(nu)
 
@@ -399,24 +284,32 @@ psd(ax1,ax2,data.spec)
 
 #%%
 ''' PSDs CSV'''
-N = 6
-nu = np.array([0.015,0.115,0.005])
-data.BB_spectrum(nu)
-y = data.spec
+
+nu = np.array([1,1.2,1.4,1.6,1.8,2])
+#data.BB_spectrum(nu)
+#y = data.spec
 #for i in range(3):
 #    np.savetxt('%.3f.ascii'%nu[i],y[:,i])
-def psd(ax1,ax2):
+''' Bending power law '''
+def P(nu,nu_bend,a_low,a_high,norm):
+    return norm*nu**(a_low)/(1+(nu/nu_bend)**(a_low-a_high))
+
+def psd(ax1,ax2,n):
     N = len(nu)
 
     for i in range(N):
         
         y = pd.read_csv(wdir + 'spec/' + '%.3f.txt'%nu[i],header=None).values[:,1]
-        y = (y-np.mean(y))
-        a1,a2 = signal.welch(y,nperseg=128)
-#        a2 = (a2-np.mean(a2))/np.std(a2)
-        ax1.plot(a1,a2,label=r'$\nu = $%.3f'%nu[i],lw=0.4,color=plt.cm.jet(20*(N-i)))
-    
-        ax2.plot(data.t*1e-4,y,label=r'$\nu = $%.3f'%nu[i],lw=0.4,color=plt.cm.jet(20*(N-i)))
+        y = (y-np.mean(y))/np.std(y)
+        a1,a2 = signal.welch(y,nperseg=n)
+        
+#        popt,pcov = scipy.optimize.curve_fit(P,a1,a2,p0=[0.1,1,1,1])
+#        print(popt)
+#        ax1.plot(a1,P(a1,popt[0],popt[1],popt[2],popt[3]),label=r'$\nu = $%.3f'%nu[i],lw=0.4,color=plt.cm.jet((N-i)/(1.0*N)))
+        ax1.plot(a1,a1*a2,label=r'$\nu = $%.3f'%nu[i],lw=0.4,color=plt.cm.jet((N-i)/(1.0*N)))
+        
+        
+        ax2.plot(data.t*1e-4,y,label=r'$\nu = $%.3f'%nu[i],lw=0.4,color=plt.cm.jet((N-i)/(1.0*N)))
         ax1.legend()
         ax2.legend()
         
@@ -434,11 +327,19 @@ ax1.set_xlabel(r'Temporal frequency ($c^3/GM$)')
 ax1.set_ylabel(r'Power')
 ax1.set_title(r'PSDs of $L_{\nu}$ for various $\nu$')
 
-psd(ax1,ax2)
+psd(ax1,ax2,216)
+
+
+#%%
+
+
+    
+
+
+
 
 #%%
 ''' RMS relations - basically just looks like BB spectrum as expected. '''
-
 fig1,ax1 = plt.subplots(1, 1, figsize=(12,8))
 #fig2,ax2 = plt.subplots(1, 1, figsize=(12,8))
 y_rms = np.zeros(15)
@@ -456,8 +357,7 @@ ax1.set_ylabel('rms Spectral luminosity')
 
 #%%
 '''half light radius'''
-
-def half_radius(self,nu,R_max):
+def calculate_half_radius(self,nu,R_max):
     
     a1 = 0.004335413952759297 #dimensionless
     a2 = 0.009126342080710765 #dimensionless
@@ -489,7 +389,6 @@ nu = np.logspace(np.log10(0.03),np.log10(3),20)
 N = len(nu)
 r_max = 462
 
-
 def plot_half_radius(B_d,B_f,lum):
     hlr = np.zeros(N)
     for j in range(N):
@@ -518,8 +417,6 @@ def plot_half_radius(B_d,B_f,lum):
     
     plot_cartesian(fig1,ax1,data.x1[:r_max],B_f.transpose(1,0),range(len(nu)),0.3,'lin',labels = nu)
 #    plt.savefig("HLR.pdf",dpi = 300,bbox_inches="tight")
-    
-    
     fig2,ax2 = plt.subplots(1, 1, figsize=(9,6))
     ax2.set_title(r'Half light radius, normalised by $L$')
     ax2.set_xlabel(r'Radius $r/r_g$')
@@ -537,68 +434,52 @@ plot_half_radius(B_disc,B_freq,L)
 plt.plot(B)
 
 #%%
-'''slice animation'''
-
-data.ani_polar()
-
-#%%
-
-
-animation_polar(x1,x2,q,0,352,0,170,'TEST3',10,'lin',v_min=-5e-4,v_max=2e-4)
-
-
-
-#%%
-''' IMPORTING DBL '''
-wdir = '/Users/iCade/Desktop/CAM/PartIII/PROJECT/python/input/'
-import pyPLUTO as pp
-D = pp.pload(300,w_dir=wdir)
-q = (D.bx1*D.bx3)[:352,39:209,:]
-x1 = D.x1
-x2 = D.x2[39:209]
-x3 = D.x3
-
-
-#%%
 ''' TIME LAGS '''
-
-
-
 #for i in range(N):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
+#fig1,ax1 = plt.subplots(1,1)
 
+nu = np.concatenate((np.logspace(np.log10(0.005),np.log10(0.5),7),np.linspace(0.6,2,8)))[6:]
+#data.BB_spectrum(nu)
+#y = data.spec
 
-def time_lags(y):
+y = np.zeros((1024,9))
+for i in range(9):
     
+    y[:,i] = pd.read_csv(wdir + 'spec/' + '%.3f.txt'%nu[i],header=None).values[:,1]
+#    y[:,i] = (y[:,i]-np.mean(y[:,i]))
+
+
+def time_lags(fig2,ax2,y,ref,nperseg):
+
     for i in range(9):
         
         j = (i / 3,i % 3)
         
-        sig1 = np.fft.fft(y[:,4],n=512)
-        sig2 = np.fft.fft(y[:,i],n=512)
+        sig1 = np.fft.fft(y[:,ref]*np.blackman(1024),n=nperseg)
+        sig2 = np.fft.fft(y[:,i]*np.blackman(1024),n=nperseg)
         
-        ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%i)
-        ax1.legend(loc=1)
-    #freqs = np.fft.rfftfreq(len(sig1))  
+#            ax1.plot(data.t,y[:,i],lw=0.5,label = r'$\nu = $%.2f'%i)
+#        ax1.legend(loc=1)
+#        freqs = np.fft.rfftfreq(len(sig1)*2-1)
         freqs = np.linspace(1,len(sig1)+1,len(sig1))
-        time_lag = np.angle(sig1*np.conj(sig2))
+        time_lag = np.angle(sig1*np.conj(sig2))/freqs
 
-        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = r'$radius = $%i$r_g$'%data.x1[radii[i]])
-        l,m=np.polyfit(freqs,time_lag,1)
-        ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
+        ax2[j].plot(freqs,time_lag,lw=0,marker='.',ms=1,label = '%.3f'%nu[i])
+#        l,m=np.polyfit(freqs,time_lag,1)
+#        ax2[j].plot(freqs,l*freqs+m,lw=0.5,label = r'slope = %.5f'%l)
         ax2[j].legend(loc=1)
-        ax2[j].set_xlabel('Temporal frequency'); ax2[j].set_ylabel(r'Phase shift, $\Delta \phi$');
-
-fig1,ax1 = plt.subplots(1,1)
-fig2,ax2 = plt.subplots(3,3)
-fig2.suptitle(r'Time lags between non overlapping annuli, $\nu = 0.5$')
-fig2.tight_layout()
-fig.subplots_adjust(top=0.88)
-ax1.plot(data.t,y0[:,0],lw=0.5,label = r'$\nu = $%.2f'%0)
-time_lags(y0)
-    
+        ax2[j].set_xlabel('Temporal frequency'); ax2[j].set_ylabel(r'Time lag, $GM/c^3$');
+        ax2[j].axhline(y=0,ls='--',lw=0.5)
+#            ax2[j].set_ylabel(r'Phase shift, $\Delta \phi$');
 
 
+    fig2.suptitle(r'Time lags, $\nu = 0.5$')
+    fig2.tight_layout()
+    fig2.subplots_adjust(top=0.88)
+
+fig1,ax1 = plt.subplots(3,3)
+time_lags(fig1,ax1,y,5,32)
 #%%
 ''' TESTING MODELS '''
 
@@ -690,10 +571,3 @@ ax2.plot(freq2,psd2,label='unshifted',lw=0.6)
 #ax4 = ax.twinx()
 #ax4.plot( np.fft.fft(shifted) - np.fft.fft(unshifted) ,lw=0.4)
 ax2.legend()
-
-
-
-
-
-
-
