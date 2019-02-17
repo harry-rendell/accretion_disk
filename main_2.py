@@ -194,7 +194,7 @@ def coherence(self,nu):
 #    mid = range(20,30)
     '''Below'''
     for i in range(peak):
-        result = signal.correlate(y[:,peak],y[:,i],mode='valid')
+        result = signal.correlate(y[:,peak],y[:,i],mode='s')
         w,cf = signal.coherence(y[:,peak],y[:,i])
         
         ax3.plot(w,cf,lw = 0.4,color = 'r')
@@ -236,7 +236,7 @@ coherence(data,range(9))
 
 fig,ax = plt.subplots(3,3)
 
-fig.suptitle(r'Cross correlation between non overlapping annuli, $\nu = 0.5$')
+fig.suptitle(r'Cross correlation betweenl non overlapping annuli, $\nu = 0.5$')
 fig.tight_layout()
 fig.subplots_adjust(top=0.88)
 
