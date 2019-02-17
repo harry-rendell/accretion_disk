@@ -32,7 +32,12 @@ class main():
     def csv_load(self,name):
         self.q_rp = np.zeros((462,128,self.end-self.start+1))
         for i in range(self.end-self.start+1):
-            self.q_rp[:,:,i] = pd.read_csv(wdir + name + '/' + name +'_0%i' %(i+start),header=None).values
+            self.q_rp[:,:,i] = pd.read_csv(wdir + name + '/' + name +'_0%i' %(i+self.start),header=None).values
+
+    def csv_load_mdot(self,name):
+        name = 'csv_M_dot'
+        self.M = pd.read_csv(wdir + name + '/' + name +'_0%i' %(1262),header=None,delim_whitespace=True).values
+
 
     def doppler(self,i):
         r = self.x1
@@ -253,11 +258,11 @@ for i in range(9):
 #%% 
 ''' PSDs '''
 #nu = np.logspace(np.log10(0.01),np.log10(2),10)
-nu = np.concatenate((np.logspace(np.log10(0.005),np.log10(0.5),7),np.linspace(0.6,2,8)))
+nu = np.concatenate((np.logspace(np.log10(0.00001),np.log10(0.004),7),np.linspace(2.1,5,8)))[:7]
 data.BB_spectrum(nu)
 y = data.spec
-#for i in range(5):
-#    np.savetxt('%.3f.txt'%nu[i],np.concatenate((t[:,np.newaxis],y[:,i][:,np.newaxis]),axis=1),delimiter = ',')
+for i in range(7):
+    np.savetxt('%.5f.txt'%nu[i],np.concatenate((t[:,np.newaxis],y[:,i][:,np.newaxis]),axis=1),delimiter = ',')
 def psd(ax1,ax2,y):
     N = len(nu)
 
@@ -434,7 +439,7 @@ plot_half_radius(B_disc,B_freq,L)
 plt.plot(B)
 
 #%%
-''' TIME LAGS '''
+''' MULTIPLOT TIME LAGS '''
 #for i in range(N):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))/np.std(y[:,i])
 #fig1,ax1 = plt.subplots(1,1)
@@ -450,9 +455,9 @@ for i in range(9):
 #    y[:,i] = (y[:,i]-np.mean(y[:,i]))
 
 
-def time_lags(fig2,ax2,y,ref,nperseg):
+def multi_time_lags(fig2,ax2,y,ref,nperseg):
 
-    for i in range(9):
+    for i in range(ref,ref+9)*2:
         
         j = (i / 3,i % 3)
         
@@ -479,7 +484,17 @@ def time_lags(fig2,ax2,y,ref,nperseg):
     fig2.subplots_adjust(top=0.88)
 
 fig1,ax1 = plt.subplots(3,3)
-time_lags(fig1,ax1,y,5,32)
+mulit_time_lags(fig1,ax1,M,20,256)
+
+#%%
+''' SINGLEPLOT TIME LAGS '''
+def time_lags()
+    sig1 = np.fft.fft(,n=nperseg)
+    sig2 = np.fft.fft(,n=nperseg)
+    freqs = np.linspace(1,len(sig1)+1,len(sig1))
+    time_lag = np.angle(sig1*np.conj(sig2))/freqs
+    
+
 #%%
 ''' TESTING MODELS '''
 
@@ -571,3 +586,9 @@ ax2.plot(freq2,psd2,label='unshifted',lw=0.6)
 #ax4 = ax.twinx()
 #ax4.plot( np.fft.fft(shifted) - np.fft.fft(unshifted) ,lw=0.4)
 ax2.legend()
+#%%
+''' M_dot '''
+
+
+
+
